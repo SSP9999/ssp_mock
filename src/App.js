@@ -205,6 +205,7 @@ const Dashboard = ({ user, onLogout, onStartTest, onViewResults }) => {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
+        <img src="/studentlogo.jpg" alt="Student Logo" style={{width:"3rem"}}/>
         <h1>Mock Test Dashboard</h1>
         <div className="user-info">
           <span>Welcome, {user.name}</span>
@@ -260,8 +261,6 @@ const MockTest = ({ testId, onTestComplete, onBackToDashboard }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-
-
   const fetchTest = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -280,8 +279,7 @@ const MockTest = ({ testId, onTestComplete, onBackToDashboard }) => {
     }
   };
 
-
-    useEffect(() => {
+  useEffect(() => {
     fetchTest();
    // eslint-disable-next-line 
   }, [testId]);
