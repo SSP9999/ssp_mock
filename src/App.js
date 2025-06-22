@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 // API base URL
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'https://mock-test-backend-amber.vercel.app/api';
 
 // Components
 const Login = ({ onLogin, switchToSignup }) => {
