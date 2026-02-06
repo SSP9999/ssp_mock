@@ -118,6 +118,12 @@ button:disabled {
   align-items: center;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .dashboard-header h1 {
   margin: 0;
 }
@@ -139,6 +145,22 @@ button:disabled {
 
 .logout-btn:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+.external-app-btn {
+  background: #f39c12;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  width: auto;
+  transition: background 0.3s;
+}
+
+.external-app-btn:hover {
+  background: #e67e22;
 }
 
 .dashboard-content {
@@ -310,6 +332,24 @@ button:disabled {
 
 .submit-test-btn:disabled {
   background: #bdc3c7;
+}
+
+/* External App Styles */
+.external-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.external-app-content {
+  flex: 1;
+  background-color: #eee;
+}
+
+.external-iframe {
+  width: 100%;
+  height: calc(100vh - 70px);
+  border: none;
 }
 
 /* Results Styles */
