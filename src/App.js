@@ -27,7 +27,13 @@ const Login = ({ onLogin, switchToSignup }) => {
       if (response.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        onLogin(data.user);
+
+        let mockPass = null;
+        // Check for mock credentials to facilitate auto-login to external app
+        if (formData.email.includes('mock') || formData.email.includes('admin') || formData.password === 'admin123') {
+           mockPass = formData.password;
+        }
+        onLogin(data.user, mockPass);
       } else {
         setError(data.message);
       }
@@ -154,7 +160,7 @@ const Signup = ({ onLogin, switchToLogin }) => {
   );
 };
 
-const Dashboard = ({ user, onLogout, onStartTest, onViewResults }) => {
+const Dashboard = ({ user, onLogout, onStartTest, onViewResults, onOpenExternalApp }) => {
   const [tests, setTests] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -205,9 +211,12 @@ const Dashboard = ({ user, onLogout, onStartTest, onViewResults }) => {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <img src="/studentlogo.jpg" alt="Student Logo" style={{width:"3rem"}}/>
-        <h1>Mock Test Dashboard</h1>
+        <div className="header-left">
+          <img src="/studentlogo.jpg" alt="Student Logo" style={{width:"3rem"}}/>
+          <h1>Mock Test Dashboard</h1>
+        </div>
         <div className="user-info">
+          <button onClick={onOpenExternalApp} className="external-app-btn">External App</button>
           <span>Welcome, {user.name}</span>
           <button onClick={onLogout} className="logout-btn">Logout</button>
         </div>
@@ -364,6 +373,33 @@ const MockTest = ({ testId, onTestComplete, onBackToDashboard }) => {
   );
 };
 
+const ExternalApp = ({ user, mockPassword, onBackToDashboard }) => {
+  // Using query parameters for auto-login as requested for mock credentials.
+  // Note: This is a security anti-pattern and should only be used for mock/dev environments.
+  const externalAppUrl = mockPassword
+    ? `https://lookout-dev-staging.vercel.app/login?email=${encodeURIComponent(user.email)}&password=${encodeURIComponent(mockPassword)}`
+    : `https://lookout-dev-staging.vercel.app/`;
+
+  return (
+    <div className="external-app">
+      <header className="dashboard-header">
+        <div className="header-left">
+          <img src="/studentlogo.jpg" alt="Student Logo" style={{width:"3rem"}}/>
+          <h1>External Application</h1>
+        </div>
+        <button onClick={onBackToDashboard} className="back-btn">Back to Dashboard</button>
+      </header>
+      <div className="external-app-content">
+        <iframe
+          src={externalAppUrl}
+          title="External App"
+          className="external-iframe"
+        />
+      </div>
+    </div>
+  );
+};
+
 const Results = ({ result, onBackToDashboard }) => {
   return (
     <div className="results">
@@ -409,6 +445,7 @@ const Results = ({ result, onBackToDashboard }) => {
 // Main App Component
 function App() {
   const [user, setUser] = useState(null);
+  const [mockPassword, setMockPassword] = useState(null);
   const [currentView, setCurrentView] = useState('login');
   const [selectedTestId, setSelectedTestId] = useState(null);
   const [testResult, setTestResult] = useState(null);
@@ -424,8 +461,9 @@ function App() {
     }
   }, []);
 
-  const handleLogin = (userData) => {
+  const handleLogin = (userData, mockPass = null) => {
     setUser(userData);
+    setMockPassword(mockPass);
     setCurrentView('dashboard');
   };
 
@@ -433,6 +471,7 @@ function App() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    setMockPassword(null);
     setCurrentView('login');
   };
 
@@ -450,6 +489,10 @@ function App() {
     setCurrentView('dashboard');
     setSelectedTestId(null);
     setTestResult(null);
+  };
+
+  const handleOpenExternalApp = () => {
+    setCurrentView('externalApp');
   };
 
   return (
@@ -473,6 +516,15 @@ function App() {
           user={user}
           onLogout={handleLogout}
           onStartTest={handleStartTest}
+          onOpenExternalApp={handleOpenExternalApp}
+        />
+      )}
+
+      {currentView === 'externalApp' && user && (
+        <ExternalApp
+          user={user}
+          mockPassword={mockPassword}
+          onBackToDashboard={handleBackToDashboard}
         />
       )}
 
