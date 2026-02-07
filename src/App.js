@@ -6,12 +6,21 @@ const API_BASE = 'https://mock-test-backend-amber.vercel.app/api';
 
 // Components
 const Login = ({ onLogin, onSSOLogin, switchToSignup }) => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [showSSO, setShowSSO] = useState(false);
-  const [ssoToken, setSsoToken] = useState('');
+  console.log('Rendering Login component', onSSOLogin);
 
+  const [formData, setFormData] = React.useState({ email: '', password: '' });
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [showSSO, setShowSSO] = React.useState(false);
+
+  // 🔐 Hardcoded SSO TOKEN (REPLACE with real generated token)
+const SAMPLE_SSO_TOKEN =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InNzb0B0ZXN0LmNvbSIsInVzZXJuYW1lIjoic3NvVXNlciIsInN1YiI6IjEwMDEiLCJpYXQiOjE3NzA0MzQ5MDMsImV4cCI6MTgwMTk3MDkwM30.g3WS5qi0bldiydw1lW7nWOm3ZCKT86yOzE07eR2dNpw";
+
+
+  const [ssoToken, setSsoToken] = React.useState(SAMPLE_SSO_TOKEN);
+
+  // ---------------- NORMAL LOGIN ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -31,10 +40,14 @@ const Login = ({ onLogin, onSSOLogin, switchToSignup }) => {
         localStorage.setItem('user', JSON.stringify(data.user));
 
         let mockPass = null;
-        // Check for mock credentials to facilitate auto-login to external app
-        if (formData.email.includes('mock') || formData.email.includes('admin') || formData.password === 'admin123') {
-           mockPass = formData.password;
+        if (
+          formData.email.includes('mock') ||
+          formData.email.includes('admin') ||
+          formData.password === 'admin123'
+        ) {
+          mockPass = formData.password;
         }
+
         onLogin(data.user, mockPass);
       } else {
         setError(data.message);
@@ -46,11 +59,16 @@ const Login = ({ onLogin, onSSOLogin, switchToSignup }) => {
     }
   };
 
+  // ---------------- SSO LOGIN ----------------
   const handleSSOSubmit = async (e) => {
     e.preventDefault();
-    if (ssoToken) {
-      onSSOLogin(ssoToken);
-    }
+    if (!ssoToken) return;
+    onSSOLogin(ssoToken);
+  };
+
+  // ---------------- AUTO SSO ----------------
+  const handleAutoSSO = () => {
+    onSSOLogin(SAMPLE_SSO_TOKEN);
   };
 
   return (
@@ -58,6 +76,7 @@ const Login = ({ onLogin, onSSOLogin, switchToSignup }) => {
       <div className="auth-card">
         <h2>{showSSO ? 'SSO Login' : 'Login'}</h2>
 
+        {/* ---------------- NORMAL LOGIN UI ---------------- */}
         {!showSSO ? (
           <>
             <form onSubmit={handleSubmit}>
@@ -66,33 +85,53 @@ const Login = ({ onLogin, onSSOLogin, switchToSignup }) => {
                   type="email"
                   placeholder="Email"
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   required
                 />
               </div>
+
               <div className="form-group">
                 <input
                   type="password"
                   placeholder="Password"
                   value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   required
                 />
               </div>
+
               {error && <div className="error">{error}</div>}
+
               <button type="submit" disabled={loading}>
                 {loading ? 'Logging in...' : 'Login'}
               </button>
             </form>
+
             <div className="sso-divider">
               <span>OR</span>
             </div>
-            <button className="sso-btn" onClick={() => setShowSSO(true)}>
-              Login with SSO
+
+            {/* 🔐 AUTO SSO LOGIN BUTTON */}
+            <button className="sso-btn" onClick={handleAutoSSO}>
+              Login with SSO (Auto)
+            </button>
+
+            {/* Manual token option */}
+            <button
+              className="link-btn"
+              onClick={() => setShowSSO(true)}
+              style={{ marginTop: '10px' }}
+            >
+              Enter Token Manually
             </button>
           </>
         ) : (
           <>
+            {/* ---------------- MANUAL TOKEN UI ---------------- */}
             <form onSubmit={handleSSOSubmit}>
               <div className="form-group">
                 <input
@@ -103,25 +142,34 @@ const Login = ({ onLogin, onSSOLogin, switchToSignup }) => {
                   required
                 />
               </div>
+
               {error && <div className="error">{error}</div>}
+
               <button type="submit" disabled={loading}>
                 {loading ? 'Verifying...' : 'Login with Token'}
               </button>
             </form>
-            <button className="link-btn back-to-login" onClick={() => setShowSSO(false)}>
+
+            <button
+              className="link-btn back-to-login"
+              onClick={() => setShowSSO(false)}
+            >
               Back to regular login
             </button>
           </>
         )}
 
         <p className="auth-footer">
-          Don't have an account? 
-          <button className="link-btn" onClick={switchToSignup}>Sign up</button>
+          Don't have an account?
+          <button className="link-btn" onClick={switchToSignup}>
+            Sign up
+          </button>
         </p>
       </div>
     </div>
   );
 };
+
 
 const Signup = ({ onLogin, switchToLogin }) => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
