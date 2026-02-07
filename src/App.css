@@ -86,6 +86,50 @@ button:disabled {
   margin-left: 5px;
 }
 
+.sso-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: #888;
+}
+
+.sso-divider::before,
+.sso-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.sso-divider span {
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.sso-btn {
+  background: white;
+  color: #333;
+  border: 1px solid #ddd;
+  margin-bottom: 1rem;
+}
+
+.sso-btn:hover {
+  background: #f9f9f9;
+  opacity: 1;
+}
+
+.back-to-login {
+  display: block;
+  margin: 1rem auto 0;
+  font-size: 14px;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
 .error {
   color: #e74c3c;
   text-align: center;
@@ -93,6 +137,16 @@ button:disabled {
   padding: 10px;
   background-color: #ffeaea;
   border-radius: 5px;
+}
+
+.global-error {
+  max-width: 400px;
+  margin: 1rem auto;
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  z-index: 1000;
 }
 
 .loading {
