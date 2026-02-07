@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
 // API base URL
 const API_BASE = 'https://mock-test-backend-amber.vercel.app/api';
 
 // Components
-const Login = ({ onLogin, switchToSignup }) => {
+const Login = ({ onLogin, onSSOLogin, switchToSignup }) => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showSSO, setShowSSO] = useState(false);
+  const [ssoToken, setSsoToken] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,35 +46,75 @@ const Login = ({ onLogin, switchToSignup }) => {
     }
   };
 
+  const handleSSOSubmit = async (e) => {
+    e.preventDefault();
+    if (ssoToken) {
+      onSSOLogin(ssoToken);
+    }
+  };
+
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Login</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <input
-              type="email"
-              placeholder="Email"
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <input
-              type="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-              required
-            />
-          </div>
-          {error && <div className="error">{error}</div>}
-          <button type="submit" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-        <p>
+        <h2>{showSSO ? 'SSO Login' : 'Login'}</h2>
+
+        {!showSSO ? (
+          <>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  required
+                />
+              </div>
+              {error && <div className="error">{error}</div>}
+              <button type="submit" disabled={loading}>
+                {loading ? 'Logging in...' : 'Login'}
+              </button>
+            </form>
+            <div className="sso-divider">
+              <span>OR</span>
+            </div>
+            <button className="sso-btn" onClick={() => setShowSSO(true)}>
+              Login with SSO
+            </button>
+          </>
+        ) : (
+          <>
+            <form onSubmit={handleSSOSubmit}>
+              <div className="form-group">
+                <input
+                  type="text"
+                  placeholder="Enter SSO Token"
+                  value={ssoToken}
+                  onChange={(e) => setSsoToken(e.target.value)}
+                  required
+                />
+              </div>
+              {error && <div className="error">{error}</div>}
+              <button type="submit" disabled={loading}>
+                {loading ? 'Verifying...' : 'Login with Token'}
+              </button>
+            </form>
+            <button className="link-btn back-to-login" onClick={() => setShowSSO(false)}>
+              Back to regular login
+            </button>
+          </>
+        )}
+
+        <p className="auth-footer">
           Don't have an account? 
           <button className="link-btn" onClick={switchToSignup}>Sign up</button>
         </p>
@@ -160,17 +202,12 @@ const Signup = ({ onLogin, switchToLogin }) => {
   );
 };
 
-const Dashboard = ({ user, onLogout, onStartTest, onViewResults, onOpenExternalApp }) => {
+const Dashboard = ({ user, onLogout, onStartTest, onOpenExternalApp }) => {
   const [tests, setTests] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchTests();
-    fetchResults();
-  }, []);
-
-  const fetchTests = async () => {
+  const fetchTests = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE}/tests`, {
@@ -184,9 +221,9 @@ const Dashboard = ({ user, onLogout, onStartTest, onViewResults, onOpenExternalA
     } catch (err) {
       console.error('Error fetching tests:', err);
     }
-  };
+  }, []);
 
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE}/results`, {
@@ -202,7 +239,12 @@ const Dashboard = ({ user, onLogout, onStartTest, onViewResults, onOpenExternalA
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchTests();
+    fetchResults();
+  }, [fetchTests, fetchResults]);
 
   if (loading) {
     return <div className="loading">Loading dashboard...</div>;
@@ -270,7 +312,7 @@ const MockTest = ({ testId, onTestComplete, onBackToDashboard }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchTest = async () => {
+  const fetchTest = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE}/tests/${testId}`, {
@@ -286,12 +328,11 @@ const MockTest = ({ testId, onTestComplete, onBackToDashboard }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [testId]);
 
   useEffect(() => {
     fetchTest();
-   // eslint-disable-next-line 
-  }, [testId]);
+  }, [fetchTest]);
 
   const handleAnswerChange = (questionId, answerIndex) => {
     setAnswers({
@@ -374,8 +415,6 @@ const MockTest = ({ testId, onTestComplete, onBackToDashboard }) => {
 };
 
 const ExternalApp = ({ user, mockPassword, onBackToDashboard }) => {
-  // Using query parameters for auto-login as requested for mock credentials.
-  // Note: This is a security anti-pattern and should only be used for mock/dev environments.
   const externalAppUrl = mockPassword
     ? `https://lookout-dev-staging.vercel.app/login?email=${encodeURIComponent(user.email)}&password=${encodeURIComponent(mockPassword)}`
     : `https://lookout-dev-staging.vercel.app/`;
@@ -449,8 +488,55 @@ function App() {
   const [currentView, setCurrentView] = useState('login');
   const [selectedTestId, setSelectedTestId] = useState(null);
   const [testResult, setTestResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleLogin = useCallback((userData, mockPass = null) => {
+    setUser(userData);
+    setMockPassword(mockPass);
+    setCurrentView('dashboard');
+  }, []);
+
+  const handleSSOLogin = useCallback(async (externalToken) => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE}/sso?X-External-Token=${encodeURIComponent(externalToken)}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        handleLogin(data.user);
+
+        // Clean up URL if token was in query
+        const url = new URL(window.location);
+        if (url.searchParams.has('sso_token')) {
+          url.searchParams.delete('sso_token');
+          window.history.replaceState({}, document.title, url.pathname);
+        }
+      } else {
+        setError(data.message || 'SSO Login failed');
+        setCurrentView('login');
+      }
+    } catch (err) {
+      setError('Connection error during SSO. Please try again.');
+      setCurrentView('login');
+    } finally {
+      setLoading(false);
+    }
+  }, [handleLogin]);
 
   useEffect(() => {
+    // Check for SSO token in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const ssoToken = urlParams.get('sso_token');
+
+    if (ssoToken) {
+      handleSSOLogin(ssoToken);
+      return;
+    }
+
     // Check if user is already logged in
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
@@ -459,13 +545,7 @@ function App() {
       setUser(JSON.parse(savedUser));
       setCurrentView('dashboard');
     }
-  }, []);
-
-  const handleLogin = (userData, mockPass = null) => {
-    setUser(userData);
-    setMockPassword(mockPass);
-    setCurrentView('dashboard');
-  };
+  }, [handleSSOLogin]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -495,11 +575,18 @@ function App() {
     setCurrentView('externalApp');
   };
 
+  if (loading && currentView === 'login') {
+    return <div className="loading">Processing SSO login...</div>;
+  }
+
   return (
     <div className="App">
+      {error && currentView === 'login' && <div className="error global-error">{error}</div>}
+
       {currentView === 'login' && (
         <Login 
           onLogin={handleLogin}
+          onSSOLogin={handleSSOLogin}
           switchToSignup={() => setCurrentView('signup')}
         />
       )}
